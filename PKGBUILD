@@ -10,7 +10,8 @@
 # pkgdesc from wikipedia :)
 
 pkgname=boxee-source
-pkgver=0.9.11.5777
+pkgver=0.9.12.6570
+pkgver2=0.9.12.6569
 _flashlib_pkgver=5765
 pkgrel=12
 pkgdesc="A freeware cross-platform media center software with social networking features that is a fork of the open source XBMC media center"
@@ -20,28 +21,32 @@ depends=('php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image
 makedepends=( 'autoconf' 'boost' 'pkgconfig' 'gcc' 'make' 'ccache' 'automake' 'cmake' 'nasm' 'coreutils' )
 options=('!makeflags')
 url="http://www.boxee.tv/"
-source=(http://dl.boxee.tv/boxee-$pkgver-src.tar.bz2
+source=(http://dl.boxee.tv/boxee-$pkgver-sources.tar.bz2
 	http://dl.boxee.tv/flashlib-shared-$_flashlib_pkgver.tar.gz
 	boxee.desktop
 	fribidi.patch
 	gcc44.patch
 	boxee64.patch
 	flashlib.patch
+	conf.patch
 )
-md5sums=('3d754d93878bf4ebaacedd9b5d59f2d3'
+md5sums=('a4ea53c6dfe2ae6f37e58d141312c2ec'
 	'510d09c64dcdab1352ee3b441f5bf9a0'
 	'b84c543ac1e5ff0f7d7c4b22b690e0b2'
-	'9d03328a050bea1a94b894d45058b9a1'
-	'595dd0f74f3d610946f79e5bcd8c185b'
+	'ed31f52918b56ed7bfd46c6d5dd76297'
+	'e4aef82935c79c3b138cb45384db72fa'
 	'c96ddf5e69fe88f9ac9a34c44dd625fe'
 	'c47f3eec8c8a0ef2a7fbaaca56678177'
+	'0f641e0ea2217d2578dda1e3bd3c8606'
 )
 
-_src=${srcdir}/boxee-"$pkgver"-src
+_src=${srcdir}/boxee-"$pkgver2"-sources
 
 build() {
         pushd ${_src} || return 1
         
+	if [ "1" = "0" ]; then
+
         #fribidi.patch fixes the compile issue related to fribidi (big thanks to vrtladept for getting this one rolling)
         patch -p0 < ../fribidi.patch || return 1
         
@@ -52,15 +57,22 @@ build() {
         if [ $(uname -m) = "x86_64" ]; then
         	patch -p0 < ../boxee64.patch || return 1
         fi || return 1
+
+	#config patch
+	patch -p0 < ../conf.patch || return 1
         
         pushd xbmc/lib/libBoxee/tinyxpath || return 1
         autoreconf -vif || return 1
+	./configure || return 1
         popd || return 1
-        
-	pushd xbmc/cores/dvdplayer/Codecs/libdvdnav || return 1
-	autoreconf -vif || return 1
+
+        # Goom also needs a fixup due to newer autotools
+        pushd xbmc/visualizations/Goom/goom2k4-0 || return 1
+        aclocal || return 1
+        libtoolize --copy --force || return 1
+        ./autogen.sh --enable-static --with-pic || return 1
 	popd || return 1
-        
+
         autoconf || return 1
 	./configure --prefix=/opt/boxee --disable-debug || return 1
 
@@ -78,6 +90,7 @@ build() {
 	cat Makefile.sed > Makefile || return 1
 	
         make || return 1
+	fi
 	popd || return 1
 
 	#language
@@ -343,10 +356,10 @@ EOF
 	done || return 1
 	popd || return 1
 
-	install -D ${_src}/system/python/lib/mc.py ${pkgdir}/opt/boxee/system/python/lib/mc.py || return 1
-	
+	install -D ${_src}/system/python/local/mc.py ${pkgdir}/opt/boxee/system/python/lib/mc.py || return 1
+
 	install -d ${pkgdir}/opt/boxee/system/python/lib/simplejson || return 1
-	pushd ${_src}/system/python/lib/simplejson || return 1
+	pushd ${_src}/system/python/local/simplejson || return 1
 		find . | sed -e 's/\.\///g' | while read file; do
 			if [ -d "$file" ]; then
 				install -d ${pkgdir}/opt/boxee/system/python/lib/simplejson/"$file" || return 1
