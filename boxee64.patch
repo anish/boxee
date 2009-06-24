@@ -1,0 +1,231 @@
+--- xbmc/FileSystem/FileCurl.cpp.orig	2009-03-03 16:19:03.000000000 -0800
++++ xbmc/FileSystem/FileCurl.cpp	2009-03-31 23:10:04.000000000 -0700
+@@ -25,7 +25,6 @@
+ #include "URL.h"
+ #include "Settings.h"
+ #include "utils/log.h"
+-#include "Application.h"
+ 
+ #include <sys/stat.h>
+ 
+@@ -69,14 +68,6 @@
+ }
+ 
+ /* curl calls this routine to get more data */
+-extern "C" size_t dummy_callback(char *buffer,
+-                                 size_t size,
+-                                 size_t nitems,
+-                                 void *userp)
+-{
+-  return 0;  
+-}
+-
+ extern "C" size_t write_callback(char *buffer,
+                size_t size,
+                size_t nitems,
+@@ -264,10 +255,6 @@
+   if (CURLE_OK == g_curlInterface.easy_getinfo(m_easyHandle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &length))
+     m_fileSize = m_filePos + (__int64)length;
+ 
+-  char *url = NULL; 
+-  if (CURLE_OK == g_curlInterface.easy_getinfo(m_easyHandle, CURLINFO_EFFECTIVE_URL, (char*)&url))
+-    m_strEffectiveUrl = url;
+-    
+   long response;
+   if (CURLE_OK == g_curlInterface.easy_getinfo(m_easyHandle, CURLINFO_RESPONSE_CODE, &response))
+     return response;
+@@ -404,7 +391,7 @@
+   if( m_ftpport.length() > 0 )
+     g_curlInterface.easy_setopt(h, CURLOPT_FTPPORT, m_ftpport.c_str());
+   else
+-    g_curlInterface.easy_setopt(h, CURLOPT_FTPPORT, NULL);
++    g_curlInterface.easy_setopt(h, CURLOPT_FTPPORT, (void*)NULL);
+ 
+   // allow curl to not use the ip address in the returned pasv response
+   if( m_ftppasvip )
+@@ -435,11 +422,13 @@
+   if(m_timeout == 0)
+     m_timeout = g_advancedSettings.m_curlclienttimeout;
+ 
++  // disable signal generation and timeouts in curl - this causes crashes in multithreaded apps
++  curl_easy_setopt(h, CURLOPT_NOSIGNAL , 1);
+   curl_easy_setopt(h, CURLOPT_DNS_CACHE_TIMEOUT , 0);
+-  g_curlInterface.easy_setopt(h, CURLOPT_CONNECTTIMEOUT, m_timeout);
+ 
+   /*
+   // set our timeouts, we abort connection after m_timeout, and reads after no data for m_timeout seconds
++  g_curlInterface.easy_setopt(h, CURLOPT_CONNECTTIMEOUT, m_timeout);
+   g_curlInterface.easy_setopt(h, CURLOPT_LOW_SPEED_LIMIT, 1);
+   g_curlInterface.easy_setopt(h, CURLOPT_LOW_SPEED_TIME, m_timeout);
+   */
+@@ -617,7 +606,6 @@
+ 
+   CLog::Log(LOGDEBUG, "FileCurl::Open(%p) %s", (void*)this, m_url.c_str());  
+ 
+-  m_state->m_strEffectiveUrl = m_url;
+   m_state->Init(); 
+   
+   // setup common curl options
+@@ -642,8 +630,6 @@
+     throw new CRedirectException(new CFileShoutcast); 
+   }
+ 
+-  m_url = m_state->m_strEffectiveUrl;
+-  
+   m_multisession = false;
+   if(m_url.Left(5).Equals("http:") || m_url.Left(6).Equals("https:"))
+   {
+@@ -801,18 +787,33 @@
+   SetCommonOptions(m_state); 
+   SetRequestHeaders(m_state);
+   g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_TIMEOUT, 5);
+-  g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_NOBODY, 0);
+-  g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_WRITEFUNCTION, (void*)dummy_callback);
+-  g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_FOLLOWLOCATION, 1);
+-  g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_WRITEDATA, NULL); /* will cause write failure*/
+-  
+-  char err[4096];
+-  memset(err,0,4096);
+-  g_curlInterface.easy_setopt (m_state->m_easyHandle, CURLOPT_ERRORBUFFER, err);
+-  
++  g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_NOBODY, 1);
++  g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_WRITEDATA, (void*)NULL); /* will cause write failure*/
++
+   CURLcode result = g_curlInterface.easy_perform(m_state->m_easyHandle);
+ 
+-  if( result != CURLE_OK && result != CURLE_WRITE_ERROR ) // we get write error since we cut off the stream prematurely 
++  
++  if (result == CURLE_GOT_NOTHING || result == CURLE_HTTP_RETURNED_ERROR)
++  {
++    /* some http servers and shoutcast servers don't give us any data on a head request */
++    /* request normal and just fail out, it's their loss */
++    /* somehow curl doesn't reset CURLOPT_NOBODY properly so reset everything */    
++    SetCommonOptions(m_state);
++    SetRequestHeaders(m_state);
++    g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_TIMEOUT, 5);
++    g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_RANGE, "0-0");
++    g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_WRITEDATA, (void*)NULL); /* will cause write failure*/    
++    result = g_curlInterface.easy_perform(m_state->m_easyHandle);
++  }
++
++  if(result == CURLE_HTTP_RANGE_ERROR )
++  {
++    /* crap can't use the range option, disable it and try again */
++    g_curlInterface.easy_setopt(m_state->m_easyHandle, CURLOPT_RANGE, (void*)NULL);
++    result = g_curlInterface.easy_perform(m_state->m_easyHandle);
++  }
++
++  if( result != CURLE_WRITE_ERROR && result != CURLE_OK )
+   {
+     m_state->Disconnect();
+     errno = ENOENT;
+@@ -876,7 +877,7 @@
+ 
+   // only attempt to fill buffer if transactions still running and buffer
+   // doesnt exceed required size already
+-  while ((unsigned int)m_buffer.GetMaxReadSize() < want && m_buffer.GetMaxWriteSize() > 0 && !g_application.m_bStop)
++  while ((unsigned int)m_buffer.GetMaxReadSize() < want && m_buffer.GetMaxWriteSize() > 0 )
+   {
+     /* if there is data in overflow buffer, try to use that first */
+     if(m_overflowSize)
+@@ -907,13 +908,13 @@
+         while((msg = g_curlInterface.multi_info_read(m_multiHandle, &msgs)))
+         {
+           long nRet=200;
+-	        curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &nRet);
++	      curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &nRet);
+           if (nRet == 416) 
+           {
+             //m_seekable = false;
+             return false;
+           }
+-          
++
+           if (msg->msg == CURLMSG_DONE)
+             return (msg->data.result == CURLE_OK);
+         }
+@@ -1035,3 +1036,4 @@
+    m_strCookieFileName = strCookieFile;
+ }
+ 
++
+
+--- xbmc/FileSystem/FileSmb.cpp.orig	2009-01-01 14:29:08.000000000 -0800
++++ xbmc/FileSystem/FileSmb.cpp	2009-03-31 23:17:16.000000000 -0700
+@@ -123,13 +123,13 @@
+     m_context = smbc_new_context();
+ 
+ #ifdef _LINUX
+-    smbc_setDebug(m_context, 0);
+-    smbc_setFunctionAuthData(m_context, xb_smbc_auth);
+-    orig_cache = smbc_getFunctionGetCachedServer(m_context);
+-    smbc_setFunctionGetCachedServer(m_context, xb_smbc_cache);
+-    smbc_setOptionOneSharePerServer(m_context, false); 
+-    smbc_setOptionBrowseMaxLmbCount(m_context, 0);
+-    smbc_setTimeout(m_context, g_advancedSettings.m_sambaclienttimeout * 1000); 
++//    smbc_setDebug(m_context, 0);
++//    smbc_setFunctionAuthData(m_context, xb_smbc_auth);
++//    orig_cache = smbc_getFunctionGetCachedServer(m_context);
++//    smbc_setFunctionGetCachedServer(m_context, xb_smbc_cache);
++//    smbc_setOptionOneSharePerServer(m_context, false); 
++//    smbc_setOptionBrowseMaxLmbCount(m_context, 0);
++//    smbc_setTimeout(m_context, g_advancedSettings.m_sambaclienttimeout * 1000); 
+ 
+ 
+     // Create ~/.smb/smb.conf
+@@ -162,7 +162,7 @@
+       fclose(f);
+     }
+     
+-    smbc_setWorkgroup(m_context,  strdup(g_guiSettings.GetString("smb.workgroup").c_str()));
++//    smbc_setWorkgroup(m_context,  strdup(g_guiSettings.GetString("smb.workgroup").c_str()));
+ #endif
+     
+     // initialize samba and do some hacking into the settings
+@@ -282,9 +282,9 @@
+   memset(buffer,0,buffer_len);
+   char *strSrc = strdup(value.c_str()); // urlencode requires char* and not const char *. just to be on the safe side
+ #ifdef _WIN32
+-  smbc_urlencode(buffer, strSrc, buffer_len);
++//  smbc_urlencode(buffer, strSrc, buffer_len);
+ #else
+-  SMBC_urlencode(buffer, strSrc, buffer_len);
++//  SMBC_urlencode(buffer, strSrc, buffer_len);
+ #endif
+   free(strSrc);
+   CStdString encoded = buffer;
+@@ -299,9 +299,9 @@
+   memset(buffer,0,buffer_len);
+   char *strSrc = strdup(value.c_str()); // urlencode requires char* and not const char *. just to be on the safe side
+ #ifdef _WIN32
+-  smbc_urldecode(buffer, strSrc, buffer_len-1);
++//  smbc_urldecode(buffer, strSrc, buffer_len-1);
+ #else
+-  SMBC_urldecode(buffer, strSrc, buffer_len-1);
++//  SMBC_urldecode(buffer, strSrc, buffer_len-1);
+ #endif
+   free(strSrc);
+   CStdString decoded = buffer;
+   
+--- xbmc/utils/md5.h.orig	2008-07-27 01:09:47.000000000 -0700
++++ xbmc/utils/md5.h	2009-04-08 22:14:32.000000000 -0700
+@@ -44,7 +44,7 @@
+ #include "StdString.h"
+ 
+ /* typedef a 32 bit type */
+-typedef unsigned long int UINT4;
++typedef unsigned int UINT4;
+ 
+ /* Data structure for MD5 (Message Digest) computation */
+ typedef struct {
+--- xbmc/lib/cximage-6.0/tiff/Makefile.orig	2009-04-29 16:10:23.000000000 -0400
++++ xbmc/lib/cximage-6.0/tiff/Makefile	2009-04-29 16:10:42.000000000 -0400
+@@ -3,7 +3,7 @@
+ OBJS=fax3sm_winnt.o tif_aux.o tif_close.o tif_codec.o tif_compress.o tif_dir.o tif_dirinfo.o tif_dirread.o tif_dirwrite.o tif_dumpmode.o tif_error.o tif_fax3.o tif_flush.o tif_getimage.o tif_jpeg.o tif_luv.o tif_lzw.o tif_next.o tif_ojpeg.o tif_open.o tif_packbits.o tif_pixarlog.o tif_predict.o tif_print.o tif_read.o tif_strip.o tif_swab.o tif_thunder.o tif_tile.o tif_version.o tif_warning.o tif_write.o tif_zip.o
+ 
+ %o : %c
+-	$(CC) $(CFLAGS) -c -o $@ $< 
++	$(CC) $(CFLAGS) -fPIC -c -o $@ $< 
+ 
+ tiff.a: $(OBJS)
+ 	$(AR) rc $@ $(OBJS)
