@@ -1,11 +1,20 @@
---- configure.in.orig	2009-06-24 01:37:32.000000000 -0400
-+++ configure.in	2009-06-24 01:37:51.000000000 -0400
-@@ -1036,8 +1036,6 @@
+--- configure.in.orig	2009-06-24 05:00:22.000000000 -0400
++++ configure.in	2009-06-24 05:00:41.000000000 -0400
+@@ -1036,7 +1036,6 @@
                  [xbmc/visualizations/OpenGLSpectrum/Makefile]
                  [xbmc/visualizations/WaveForm/Makefile]
                  [xbmc/visualizations/iTunes/Makefile]
 -                [tools/Linux/xbmc.sh]
--                [tools/XBMCTex/Makefile]
+                 [tools/XBMCTex/Makefile]
                  [tools/EventClients/Clients/OSXRemote/Makefile]
  )
+--- tools/XBMCTex/XFileUtils.cpp.orig	2009-06-24 06:01:25.000000000 -0400
++++ tools/XBMCTex/XFileUtils.cpp	2009-06-24 06:01:42.000000000 -0400
+@@ -20,6 +20,7 @@
+  */
  
+ #include "system.h"
++#include "XHandle.h"
+ #include "PlatformInclude.h"
+ #include "XFileUtils.h"
+ #include "XTimeUtils.h"
