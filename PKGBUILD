@@ -356,20 +356,20 @@ EOF
 	done || return 1
 	popd || return 1
 
-	install -D ${_src}/system/python/local/mc.py ${pkgdir}/opt/boxee/system/python/lib/mc.py || return 1
+	install -D ${_src}/system/python/local/mc.py ${pkgdir}/opt/boxee/system/python/local/mc.py || return 1
 
-	install -d ${pkgdir}/opt/boxee/system/python/lib/simplejson || return 1
+	install -d ${pkgdir}/opt/boxee/system/python/local/simplejson || return 1
 	pushd ${_src}/system/python/local/simplejson || return 1
 		find . | sed -e 's/\.\///g' | while read file; do
 			if [ -d "$file" ]; then
-				install -d ${pkgdir}/opt/boxee/system/python/lib/simplejson/"$file" || return 1
+				install -d ${pkgdir}/opt/boxee/system/python/local/simplejson/"$file" || return 1
 			elif [ $(echo $file | grep .py$ -c) = "1" ]; then
-				install -D "$file" ${pkgdir}/opt/boxee/system/python/lib/simplejson/"$file" || return 1
+				install -D "$file" ${pkgdir}/opt/boxee/system/python/local/simplejson/"$file" || return 1
 			fi || return 1
 		done || return 1
 	popd || return 1
 	
-	pushd ${pkgdir}/opt/boxee/system/python/lib/simplejson || return 1
+	pushd ${pkgdir}/opt/boxee/system/python/local/simplejson || return 1
 #This isn't indented because whitespace is significant to python
 python -O >/dev/null << EOF
 import compileall
