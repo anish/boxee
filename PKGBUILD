@@ -21,7 +21,7 @@ depends=('php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image
 makedepends=( 'autoconf' 'boost' 'pkgconfig' 'gcc' 'make' 'ccache' 'automake' 'cmake' 'nasm' 'coreutils' )
 options=('!makeflags')
 url="http://www.boxee.tv/"
-source=(boxee-$pkgver-sources.tar.bz2
+source=(http://dl.boxee.tv/boxee-$pkgver-sources.tar.bz2
 	http://dl.boxee.tv/flashlib-shared-$_flashlib_pkgver.tar.gz
 	xbmctex.tar.gz
 	boxee.desktop
