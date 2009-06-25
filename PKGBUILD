@@ -21,8 +21,9 @@ depends=('php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image
 makedepends=( 'autoconf' 'boost' 'pkgconfig' 'gcc' 'make' 'ccache' 'automake' 'cmake' 'nasm' 'coreutils' )
 options=('!makeflags')
 url="http://www.boxee.tv/"
-source=(http://dl.boxee.tv/boxee-$pkgver-sources.tar.bz2
+source=(boxee-$pkgver-sources.tar.bz2
 	http://dl.boxee.tv/flashlib-shared-$_flashlib_pkgver.tar.gz
+	xbmctex.tar.gz
 	boxee.desktop
 	fribidi.patch
 	gcc44.patch
@@ -32,6 +33,7 @@ source=(http://dl.boxee.tv/boxee-$pkgver-sources.tar.bz2
 )
 md5sums=('a4ea53c6dfe2ae6f37e58d141312c2ec'
 	'510d09c64dcdab1352ee3b441f5bf9a0'
+	'12b9dfc3d4bf4b9404793b80d26934f2'
 	'b84c543ac1e5ff0f7d7c4b22b690e0b2'
 	'ed31f52918b56ed7bfd46c6d5dd76297'
 	'e4aef82935c79c3b138cb45384db72fa'
@@ -44,8 +46,9 @@ _src=${srcdir}/boxee-"$pkgver2"-sources
 
 build() {
         pushd ${_src} || return 1
-        
-	if [ "1" = "0" ]; then
+       
+	# copy xbmctex because its missing
+	cp -r ${srcdir}/XBMCTex ${_src}/tools/.
 
         #fribidi.patch fixes the compile issue related to fribidi (big thanks to vrtladept for getting this one rolling)
         patch -p0 < ../fribidi.patch || return 1
@@ -60,7 +63,7 @@ build() {
 
 	#config patch
 	patch -p0 < ../conf.patch || return 1
-        
+
         pushd xbmc/lib/libBoxee/tinyxpath || return 1
         autoreconf -vif || return 1
 	./configure || return 1
@@ -90,7 +93,6 @@ build() {
 	cat Makefile.sed > Makefile || return 1
 	
         make || return 1
-	fi
 	popd || return 1
 
 	#language
