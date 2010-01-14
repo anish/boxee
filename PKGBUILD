@@ -19,19 +19,15 @@ makedepends=( 'autoconf' 'boost' 'pkgconfig' 'gcc' 'make' 'ccache' 'automake' 'c
 options=('!makeflags')
 url="http://www.boxee.tv/"
 source=(http://dl.boxee.tv/boxee-$pkgver-source.tar.bz2
-	http://dl.boxee.tv/flashlib-shared-$_flashlib_pkgver.tar.gz
 	boxee.desktop
 	fribidi.patch
 	boxee64.patch
-	flashlib.patch
 	anish.patch
 )
 md5sums=('477f522cb5a4eaeb6d3ea44c580e9b0a'
-	'5762c99e2ac7485c7e2876e7c93afdc8'
 	'b84c543ac1e5ff0f7d7c4b22b690e0b2'
 	'b9ff2928d707321c96ef1ad792c14dda'
 	'6fed9bb9ff72bd6bee9c6f75fddcd417'
-	'c47f3eec8c8a0ef2a7fbaaca56678177'
 	'a07e311b6da020f7e6847d249cf08b66'
 )
 
@@ -55,9 +51,6 @@ build() {
 
 		#fribidi.patch fixes the compile issue related to fribidi (big thanks to vrtladept and anish for getting this one rolling)
 		patch -p0 < ../fribidi.patch || return 1
-
-		#gcc44.patch makes the few necessary changes to compile on gcc 4.4 (thanks to anish for developing this one!)
-#		patch -p0 < ../gcc44.patch || return 1
 
 		#tinyxpath and goom need to be reconfigured so they link against the correct utilities (another thanks to anish for this one)
 		pushd xbmc/lib/libBoxee/tinyxpath || return 1
