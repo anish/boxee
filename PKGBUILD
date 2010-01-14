@@ -27,7 +27,7 @@ source=(http://dl.boxee.tv/boxee-$pkgver-source.tar.bz2
 md5sums=('477f522cb5a4eaeb6d3ea44c580e9b0a'
 	'b84c543ac1e5ff0f7d7c4b22b690e0b2'
 	'b9ff2928d707321c96ef1ad792c14dda'
-	'6fed9bb9ff72bd6bee9c6f75fddcd417'
+	'a9e40d6c001138c900099e84c5320f6a'
 	'a07e311b6da020f7e6847d249cf08b66'
 )
 
