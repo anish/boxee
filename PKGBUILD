@@ -139,7 +139,7 @@ build() {
 				fi || return 1
 #			fi || return 1
 		done || return 1
-#		install -d ${pkgdir}/opt/boxee/skin/boxee/media || return 1
+		install -d ${pkgdir}/opt/boxee/skin/boxee/media || return 1
 	popd || return 1
 
 	#system
@@ -241,7 +241,7 @@ EOF
 
 	#give_me_my_mouse_back
 	gcc ${_src}/give_me_my_mouse_back.c -o ${_src}/give_me_my_mouse_back -lSDL || return 1
-	install -D ${_src}/give_me_my_mouse_back ${pkgdir}/opt/boxee/ || return 2
+	install -D ${_src}/give_me_my_mouse_back ${pkgdir}/opt/boxee/ || return 1
 	strip ${pkgdir}/opt/boxee/give_me_my_mouse_back || return 1
 	
 	#xbmc-xrandr

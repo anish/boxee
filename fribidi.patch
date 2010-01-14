@@ -13,18 +13,4 @@
  /**
   * Shapes an Arabic text chunk
 
-Index: tools/XBMCTex/XBMCTex.cpp
-===================================================================
---- tools/XBMCTex/XBMCTex.cpp	(revision 20692)
-+++ tools/XBMCTex/XBMCTex.cpp	(working copy)
-@@ -648,7 +648,7 @@
- 			OutputFilename = args[++i];
- #ifdef _LINUX
-       char *c = NULL;
--      while ((c = strchr(OutputFilename, '\\')) != NULL) *c = '/';
-+      while ((c = (char *)strchr(OutputFilename, '\\')) != NULL) *c = '/';
- #endif
- 		}
-     else if (!stricmp(args[i], "-noprotect") || !stricmp(args[i], "-p"))
-
 
