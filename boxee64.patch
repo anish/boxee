@@ -1,5 +1,5 @@
---- ./xbmc/FileSystem/FileCurl.cpp.orig	2009-07-15 21:54:02.000000000 -0400
-+++ ./xbmc/FileSystem/FileCurl.cpp	2009-07-15 21:56:31.000000000 -0400
+--- ./xbmc/FileSystem/FileCurl.cpp.orig	2009-06-18 15:56:29.000000000 -0400
++++ ./xbmc/FileSystem/FileCurl.cpp	2009-07-21 04:16:18.000000000 -0400
 @@ -81,14 +81,6 @@
  }
  
@@ -26,15 +26,6 @@
    long response;
    if (CURLE_OK == g_curlInterface.easy_getinfo(m_easyHandle, CURLINFO_RESPONSE_CODE, &response))
      return response;
-@@ -456,7 +444,7 @@
-   if( m_ftpport.length() > 0 )
-     g_curlInterface.easy_setopt(h, CURLOPT_FTPPORT, m_ftpport.c_str());
-   else
--    g_curlInterface.easy_setopt(h, CURLOPT_FTPPORT, NULL);
-+    g_curlInterface.easy_setopt(h, CURLOPT_FTPPORT, (void*)NULL);
- 
-   // allow curl to not use the ip address in the returned pasv response
-   if( m_ftppasvip )
 @@ -810,8 +798,6 @@
      throw new CRedirectException(new CFileShoutcast); 
    }
@@ -44,7 +35,7 @@
    m_multisession = false;
    if(m_url.Left(5).Equals("http:") || m_url.Left(6).Equals("https:"))
    {
-@@ -1111,7 +1097,7 @@
+@@ -1111,7 +1096,7 @@
    
    // only attempt to fill buffer if transactions still running and buffer
    // doesnt exceed required size already
@@ -53,7 +44,7 @@
    {
      if (m_cancelled)
        return false;
-@@ -1157,13 +1143,13 @@
+@@ -1157,13 +1142,13 @@
          while((msg = g_curlInterface.multi_info_read(m_multiHandle, &msgs)))
          {
            long nRet=200;
@@ -69,14 +60,3 @@
            if (msg->msg == CURLMSG_DONE)
            {
              if (msg->data.result == CURLE_OK)
---- ./xbmc/lib/cximage-6.0/tiff/Makefile.orig	2009-07-15 21:54:03.000000000 -0400
-+++ ./xbmc/lib/cximage-6.0/tiff/Makefile	2009-07-15 21:56:31.000000000 -0400
-@@ -10,7 +10,7 @@
- OBJS=fax3sm_winnt.o tif_aux.o tif_close.o tif_codec.o tif_compress.o tif_dir.o tif_dirinfo.o tif_dirread.o tif_dirwrite.o tif_dumpmode.o tif_error.o tif_fax3.o tif_flush.o tif_getimage.o tif_jpeg.o tif_luv.o tif_lzw.o tif_next.o tif_ojpeg.o tif_open.o tif_packbits.o tif_pixarlog.o tif_predict.o tif_print.o tif_read.o tif_strip.o tif_swab.o tif_thunder.o tif_tile.o tif_version.o tif_warning.o tif_write.o tif_zip.o
- 
- %o : %c
--	$(CC) $(CFLAGS) -c -o $@ $< 
-+	$(CC) $(CFLAGS) -fPIC -c -o $@ $< 
- 
- tiff.a: $(OBJS)
- 	$(AR) rc $@ $(OBJS)
