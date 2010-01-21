@@ -14,7 +14,7 @@ pkgrel=1
 pkgdesc="A freeware cross-platform media center software with social networking features that is a fork of the open source XBMC media center"
 arch=('i686' 'x86_64')
 license=( 'GPL' )
-depends=('pulseaudio' 'php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image' 'sdl_mixer' 'sdl_gfx' 'sdl_sound' 'fribidi' 'libgl' 'libmad' 'libxinerama' 'lzo2' 'mesa' 'unrar' 'smbclient' 'sqlite3' 'streamripper' 'libogg' 'python-pysqlite' 'curl' 'gawk' 'libxrandr' 'libxrender' 'pmount' 'libvorbis' 'libmysqlclient' 'pcre' 'dbus' 'fontconfig' 'bzip2' 'boost' 'libtool' 'faac' 'enca' 'libxt' 'libxmu' 'gperf' 'unzip' 'libpng' 'libjpeg' 'python24' 'tre' 'screen' 'bison' 'libsamplerate' 'nspr' 'nss' 'gtk2')
+depends=('pulseaudio' 'php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image' 'sdl_mixer' 'sdl_gfx' 'sdl_sound' 'fribidi' 'libgl' 'libmad' 'libxinerama' 'lzo2' 'mesa' 'unrar' 'smbclient' 'sqlite3' 'streamripper' 'libogg' 'python-pysqlite' 'curl' 'gawk' 'libxrandr' 'libxrender' 'pmount' 'libvorbis' 'libmysqlclient' 'pcre' 'dbus' 'fontconfig' 'bzip2' 'boost' 'libtool' 'faac' 'enca' 'libxt' 'libxmu' 'gperf' 'unzip' 'libpng' 'libjpeg' 'python24' 'tre' 'screen' 'bison' 'libsamplerate' 'nspr' 'nss' 'gtk2' 'zip' 'libmms')
 makedepends=( 'autoconf' 'boost' 'pkgconfig' 'gcc' 'make' 'ccache' 'automake' 'cmake' 'nasm' 'coreutils')
 options=('!makeflags')
 url="http://www.boxee.tv/"
@@ -27,7 +27,7 @@ source=(http://dl.boxee.tv/boxee-$pkgver-source.tar.bz2
 md5sums=('477f522cb5a4eaeb6d3ea44c580e9b0a'
 	'b84c543ac1e5ff0f7d7c4b22b690e0b2'
 	'b9ff2928d707321c96ef1ad792c14dda'
-	'a9e40d6c001138c900099e84c5320f6a'
+	'3241498186d95a5aafd4d2a6947c764f'
 	'a07e311b6da020f7e6847d249cf08b66'
 )
 
@@ -64,10 +64,14 @@ build() {
 			./autogen.sh --enable-static --with-pic || return 1
 		popd || return 1
 		
+		pushd xbmc/lib/libass/ || return 1
+			autoreconf --install || return 1
+		popd || return 1
+		
 		aclocal || return 1
 		autoheader || return 1
 		autoconf || return 1
-		./configure --prefix=/opt/boxee --enable-mid --disable-debug --enable-external-libass || return 1
+		./configure --prefix=/opt/boxee --enable-mid --disable-debug || return 1
 	
 		#this is another hack to fix an issue with gcc44-- once again I'm using sed because the Makefile is generated in this package
 		if [ $(uname -m) = "x86_64" ]; then
