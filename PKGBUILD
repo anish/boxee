@@ -1,37 +1,41 @@
 # Contributor: Prurigro
-# Maintainer: Prurigro
-# Patches/Fixes created from efforts by myself, sdnick484, jaydonoghue, anish, jpf, vrtladept, paulingham and others! (contact me if your work is here but you aren't mentioned)
+# Maintainer: Prurigro & Anish
+# Patches/Fixes created from efforts by prurigro, sdnick484, jaydonoghue, anish, jpf, vrtladept, paulingham, bralkein, wonder, Slash and others! (contact me if your work is here but you aren't mentioned)
 # fribidi.patch fixes an issue where some people were having missing file issues related to the fribidi library
 # gcc44.patch helps boxee compile on gcc 4.4
 # boxee64.patch addresses a number of problems getting boxee to compile and run smoothly on x86_64
-# flashlib.patch allows flashlib to compile, allowing us to get a little closer to a built-from-source flash solution
+# flashlib.patch allows flashlib to compile, allowing us to get a little closer to a built-from-source flash solution. this is turned off for now
+# libpng.patch helps compile against libpng1.4
 # pkgdesc from wikipedia :)
 
 pkgname=boxee-source
-pkgver=0.9.20.10263
+pkgver=0.9.21.11421
 _flashlib_pkgver=6684
-pkgrel=1
+pkgrel=3
 pkgdesc="A freeware cross-platform media center software with social networking features that is a fork of the open source XBMC media center"
 arch=('i686' 'x86_64')
 license=( 'GPL' )
-depends=('pulseaudio' 'php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image' 'sdl_mixer' 'sdl_gfx' 'sdl_sound' 'fribidi' 'libgl' 'libmad' 'libxinerama' 'lzo2' 'mesa' 'unrar' 'smbclient' 'sqlite3' 'streamripper' 'libogg' 'python-pysqlite' 'curl' 'gawk' 'libxrandr' 'libxrender' 'pmount' 'libvorbis' 'libmysqlclient' 'pcre' 'dbus' 'fontconfig' 'bzip2' 'boost' 'libtool' 'faac' 'enca' 'libxt' 'libxmu' 'gperf' 'unzip' 'libpng' 'libjpeg' 'python24' 'tre' 'screen' 'bison' 'libsamplerate' 'nspr' 'nss' 'gtk2' 'zip' 'libmms')
-makedepends=( 'autoconf' 'boost' 'pkgconfig' 'gcc' 'make' 'ccache' 'automake' 'cmake' 'nasm' 'coreutils')
-options=('!makeflags')
+depends=('php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image' 'sdl_mixer' 'sdl_gfx' 'sdl_sound' 'fribidi' 'libgl' 'libmad' 'libxinerama' 'lzo2' 'mesa' 'unrar' 'smbclient' 'sqlite3' 'streamripper' 'libogg' 'python-pysqlite' 'curl' 'gawk' 'libxrandr' 'libxrender' 'pmount' 'libvorbis' 'libmysqlclient' 'pcre' 'dbus' 'fontconfig' 'bzip2' 'boost' 'libtool' 'faac' 'enca' 'libxt' 'libxmu' 'gperf' 'unzip' 'libpng' 'libjpeg' 'python24' 'tre' 'screen' 'bison' 'libsamplerate' 'nspr' 'nss' 'gtk2' 'zip' 'libmms' 'libvdpau' 'libxtst')
+makedepends=( 'boost' 'ccache' 'cmake' 'nasm' 'coreutils' 'rsync')
+#options=('!makeflags')
 url="http://www.boxee.tv/"
-source=(http://dl.boxee.tv/boxee-$pkgver-source.tar.bz2
+source=(http://dl.boxee.tv/boxee-sources-$pkgver.tar.bz2
 	boxee.desktop
 	fribidi.patch
 	boxee64.patch
 	anish.patch
+	libpng.patch
+	ffmpeg64.patch
 )
-md5sums=('477f522cb5a4eaeb6d3ea44c580e9b0a'
-	'b84c543ac1e5ff0f7d7c4b22b690e0b2'
-	'b9ff2928d707321c96ef1ad792c14dda'
-	'3241498186d95a5aafd4d2a6947c764f'
-	'a07e311b6da020f7e6847d249cf08b66'
-)
+md5sums=('2ff63a146d1fe2f45adc868bad082699'
+         'dcad8a3955ea2742a6dccb23e6b665ef'
+         'b9ff2928d707321c96ef1ad792c14dda'
+         '3241498186d95a5aafd4d2a6947c764f'
+         'a07e311b6da020f7e6847d249cf08b66'
+         'fbed461ece6620d2c31da1169d9744d3'
+         '4ad256054dbc6739fbe5591aac5777d7')
 
-_src=${srcdir}/boxee-"$pkgver"-source
+_src=${srcdir}/boxee-sources-"$pkgver"
 
 build() {
 	pushd ${_src} || return 1
@@ -39,18 +43,28 @@ build() {
 		if [ $(uname -m) = "x86_64" ]; then
 			#boxee64.patch allows boxee to compile on 64bit systems
 			patch -p0 < ../boxee64.patch || return 1
+			#ffmpeg needs to be patched for 64bit systems
+			patch -p0 < ../ffmpeg64.patch || return 1
+
 			#two symlinks added by paulingham that work with boxee64.patch to allow boxee to compile on x86_64
 			pushd xbmc/lib/libsmb || return 1
 				ln -s /usr/lib/libtalloc.so.1 libtalloc-x86_64-linux.a
 				ln -s /usr/lib/libwbclient.so.0 libwbclient-x86_64-linux.a
 			popd || return 1
+			_xulrunner=xulrunner-x86_64-linux
+		else
+			_xulrunner=xulrunner-i486-linux
 		fi || return 1
+		
 
 		#anish.patch adds some minor tweaks anish figured out to get the latest sources running
 		patch -p0 < ../anish.patch || return 1
 
 		#fribidi.patch fixes the compile issue related to fribidi (big thanks to vrtladept and anish for getting this one rolling)
 		patch -p0 < ../fribidi.patch || return 1
+
+		#patch to compile against libpng14, thanks to wonder for providing the original patch
+		patch -p0 < ../libpng.patch || return 1
 
 		#tinyxpath and goom need to be reconfigured so they link against the correct utilities (another thanks to anish for this one)
 		pushd xbmc/lib/libBoxee/tinyxpath || return 1
@@ -63,7 +77,8 @@ build() {
 			libtoolize --copy --force || return 1
 			./autogen.sh --enable-static --with-pic || return 1
 		popd || return 1
-		
+	
+		#thanks to bralkein	
 		pushd xbmc/lib/libass/ || return 1
 			autoreconf --install || return 1
 		popd || return 1
@@ -71,7 +86,8 @@ build() {
 		aclocal || return 1
 		autoheader || return 1
 		autoconf || return 1
-		./configure --prefix=/opt/boxee --enable-mid --disable-debug || return 1
+		#if anyone wants pulseaudio, simply remove "--disable-pulse"
+		./configure --prefix=/opt/boxee --enable-mid --disable-debug --disable-pulse --enable-xrandr || return 1
 	
 		#this is another hack to fix an issue with gcc44-- once again I'm using sed because the Makefile is generated in this package
 		if [ $(uname -m) = "x86_64" ]; then
@@ -80,7 +96,10 @@ build() {
 			sed -r 's/\(MAKE\)\ -C\ xbmc\/screensavers$/\(MAKE\)\ CFLAGS=\"-march=i486\ -02\ -pipe\"\ -C\ xbmc\/screensavers/g' Makefile > Makefile.sed || return 1
 		fi
 		cat Makefile.sed > Makefile || return 1
-	
+
+		#fix for timezones, thanks to Slash
+		cat /etc/rc.conf | grep ^TIMEZONE | cut -d"\"" -f 2 > timezone || return 1
+			
 		make || return 1
 	popd || return 1
 
@@ -161,38 +180,39 @@ EOF
 		done || return 1
 	popd || return 1
 
-	install -d ${pkgdir}/opt/boxee/system/players/flashplayer/xulrunner || return 1
-	pushd ${_src}/system/players/flashplayer/xulrunner-i486-linux || return 1
+	install -d ${pkgdir}/opt/boxee/system/players/flashplayer/${_xulrunner} || return 1
+	pushd ${_src}/system/players/flashplayer/${_xulrunner} || return 1
 		find . | sed -e 's/\.\///g' | while read file; do
 			if [ -d "$file" ]; then
-				install -d ${pkgdir}/opt/boxee/system/players/flashplayer/xulrunner/"$file" || return 1
+				install -d ${pkgdir}/opt/boxee/system/players/flashplayer/${_xulrunner}/"$file" || return 1
 			else
-				install -D "$file" ${pkgdir}/opt/boxee/system/players/flashplayer/xulrunner/"$file" || return 1
+				install -D "$file" ${pkgdir}/opt/boxee/system/players/flashplayer/${_xulrunner}/"$file" || return 1
 			fi || return 1
 		done || return 1
 	popd || return 1
 	
 	install -d ${pkgdir}/opt/boxee/system/python/lib || return 1
-	pushd ${_src}/xbmc/lib/libPython/Python/Lib || return 1
+	pushd ${_src}/system/python/Lib || return 1
 #This isn't indented because whitespace is significant to python
 python2.4 -O >/dev/null << EOF
 import compileall
 compileall.compile_dir(".", force=1)
 EOF
 	find . | sed -e 's/\.\///g' | while read file; do
-		if [ $(echo "$file" | grep -e "^test" -i -c) = 0 ]; then
+		if [ $(echo "$file" | grep -e "darwin$" -e "mac$" -i -c) = 0 ]; then
 			if [ -d "$file" ]; then
 				install -d ${pkgdir}/opt/boxee/system/python/lib/"$file" || return 1
 			elif [ ! $(echo "$file" | grep -e "\.pyo$" -i -c) = 0 ]; then
 				install -D "$file" ${pkgdir}/opt/boxee/system/python/lib/"$file" || return 1
+			elif [ ! $(echo "$file" | grep -e "\.so$" -i -c) = 0 ]; then
+				install -D "$file" ${pkgdir}/opt/boxee/system/python/lib/"$file" || return 1	
 			fi || return 1
 		fi || return 1
 	done || return 1
 	popd || return 1
 
-	rmdir ${pkgdir}/opt/boxee/system/python/lib/plat-generic || return 1
-	rmdir ${pkgdir}/opt/boxee/system/python/lib/email/test/data || return 1
-	rmdir ${pkgdir}/opt/boxee/system/python/lib/plat-next3 || return 1
+	rm -rf ${pkgdir}/opt/boxee/system/python/lib/plat-darwin || return 1
+	rm -rf ${pkgdir}/opt/boxee/system/python/lib/plat-mac || return 1
 	rmdir ${pkgdir}/opt/boxee/system/python/lib/idlelib/Icons || return 1
 	rmdir ${pkgdir}/opt/boxee/system/python/lib/site-packages || return 1
 
@@ -260,5 +280,13 @@ EOF
 	ln -s /usr/lib/libplds4.so ${pkgdir}/usr/lib/libplds4.so.0d || return 1
 	ln -s /usr/lib/libplc4.so ${pkgdir}/usr/lib/libplc4.so.0d || return 1
 	ln -s /usr/lib/libnspr4.so ${pkgdir}/usr/lib/libnspr4.so.0d || return 1
+	
+	#a symlink to solve the icon.png problem
+	pushd ${pkgdir}/opt/boxee/media/ || return 1
+		ln -s icon32x32-linux.png icon.png || return 1
+	popd || return 1
 
+	# boxee needs /etc/timezone, arch doesn't have it.
+	install -d ${pkgdir}/etc || return 1
+	install -D ${_src}/timezone ${pkgdir}/etc/ || return 1
 }
