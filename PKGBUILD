@@ -1,39 +1,50 @@
 # Contributor: Prurigro
-# Maintainer: Prurigro & Anish
-# Patches/Fixes created from efforts by prurigro, sdnick484, jaydonoghue, anish, jpf, vrtladept, paulingham, bralkein, wonder, Slash and others! (contact me if your work is here but you aren't mentioned)
+# Maintainer: Anish
+# Patches/Fixes created from efforts by prurigro, sdnick484, jaydonoghue, anish, jpf, vrtladept, paulingham, bralkein, wonder, Slash and others! (contact us if your work is here but you aren't mentioned)
 # fribidi.patch fixes an issue where some people were having missing file issues related to the fribidi library
 # gcc44.patch helps boxee compile on gcc 4.4
 # boxee64.patch addresses a number of problems getting boxee to compile and run smoothly on x86_64
 # flashlib.patch allows flashlib to compile, allowing us to get a little closer to a built-from-source flash solution. this is turned off for now
 # libpng.patch helps compile against libpng1.4
+# 12563_fix removes extraneous function calls that wont let boxee compile
 # pkgdesc from wikipedia :)
 
 pkgname=boxee-source
-pkgver=0.9.21.11421
+pkgver=0.9.23.15885
 _flashlib_pkgver=6684
 pkgrel=3
 pkgdesc="A freeware cross-platform media center software with social networking features that is a fork of the open source XBMC media center"
 arch=('i686' 'x86_64')
 license=( 'GPL' )
-depends=('php' 'alsa-lib' 'freetype2' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image' 'sdl_mixer' 'sdl_gfx' 'sdl_sound' 'fribidi' 'libgl' 'libmad' 'libxinerama' 'lzo2' 'mesa' 'unrar' 'smbclient' 'sqlite3' 'streamripper' 'libogg' 'python-pysqlite' 'curl' 'gawk' 'libxrandr' 'libxrender' 'pmount' 'libvorbis' 'libmysqlclient' 'pcre' 'dbus' 'fontconfig' 'bzip2' 'boost' 'libtool' 'faac' 'enca' 'libxt' 'libxmu' 'gperf' 'unzip' 'libpng' 'libjpeg' 'python24' 'tre' 'screen' 'bison' 'libsamplerate' 'nspr' 'nss' 'gtk2' 'zip' 'libmms' 'libvdpau' 'libxtst')
-makedepends=( 'boost' 'ccache' 'cmake' 'nasm' 'coreutils' 'rsync')
-#options=('!makeflags')
+depends=('php' 'glew' 'hal' 'jasper' 'libcdio' 'sdl_image' 'sdl_mixer' 'sdl_gfx' 'sdl_sound' 'fribidi' 'libmad' 'lzo2' 'unrar' 'smbclient' 'streamripper' 'python-pysqlite' 'curl' 'gawk' 'pmount' 'libmysqlclient' 'dbus' 'bzip2' 'boost' 'faac' 'enca' 'gperf' 'unzip' 'tre' 'screen' 'bison' 'libsamplerate' 'zip' 'libmms' 'libvdpau' 'libxtst' 'libxrandr' 'fontconfig' 'libxinerama' 'python24')
+makedepends=( 'boost' 'cmake' 'nasm' 'coreutils' 'rsync' 'glew')
+options=('!makeflags')
 url="http://www.boxee.tv/"
+install='boxee-source.install'
 source=(http://dl.boxee.tv/boxee-sources-$pkgver.tar.bz2
 	boxee.desktop
+	smbno.h
 	fribidi.patch
 	boxee64.patch
 	anish.patch
 	libpng.patch
 	ffmpeg64.patch
-)
-md5sums=('2ff63a146d1fe2f45adc868bad082699'
+	12563_fix.patch
+	libmms.patch
+	mysql_fix.patch
+	samba.patch)
+md5sums=('36284eee3cb1db776b78e594865aa7b6'
          'dcad8a3955ea2742a6dccb23e6b665ef'
+         '3e53f9a60344dad366b230fb2ac876ec'
          'b9ff2928d707321c96ef1ad792c14dda'
          '3241498186d95a5aafd4d2a6947c764f'
          'a07e311b6da020f7e6847d249cf08b66'
          'fbed461ece6620d2c31da1169d9744d3'
-         '4ad256054dbc6739fbe5591aac5777d7')
+         '4ad256054dbc6739fbe5591aac5777d7'
+         'de21425ae087313e2898aa5edaeda14b'
+         'cff658ec51e4fe7cfb94700ae689970f'
+         'da4c26bf1a0b3c55ed5b773d025d45fb'
+         'a28c4cf86d1eba78d7f66bdbc4dafcf0')
 
 _src=${srcdir}/boxee-sources-"$pkgver"
 
@@ -66,6 +77,19 @@ build() {
 		#patch to compile against libpng14, thanks to wonder for providing the original patch
 		patch -p0 < ../libpng.patch || return 1
 
+		#patch to compilet release 0.9.21.12563, remove extraneous function calls that cause linkage failure
+		patch -p0 < ../12563_fix.patch || return 1
+		
+		#patch to fix libmms 
+		patch -p0 < ../libmms.patch || return 1
+
+		#thank the fedora guys for this
+		patch -p1 < ../mysql_fix.patch || return 1
+
+		#smbno.h was deprecated in the kernel, the boxee guys leave us hanging as usual
+		patch -p0 < ../samba.patch || return 1
+		cp ../smbno.h xbmc/cores/paplayer/MACDll/Source/MACLib/. || return 1
+		
 		#tinyxpath and goom need to be reconfigured so they link against the correct utilities (another thanks to anish for this one)
 		pushd xbmc/lib/libBoxee/tinyxpath || return 1
 			autoreconf -vif || return 1
@@ -87,7 +111,7 @@ build() {
 		autoheader || return 1
 		autoconf || return 1
 		#if anyone wants pulseaudio, simply remove "--disable-pulse"
-		./configure --prefix=/opt/boxee --enable-mid --disable-debug --disable-pulse --enable-xrandr || return 1
+		./configure --prefix=/opt/boxee --enable-mid --disable-debug --disable-pulse --enable-xrandr --disable-ccache --enable-vdpau || return 1
 	
 		#this is another hack to fix an issue with gcc44-- once again I'm using sed because the Makefile is generated in this package
 		if [ $(uname -m) = "x86_64" ]; then
@@ -97,11 +121,11 @@ build() {
 		fi
 		cat Makefile.sed > Makefile || return 1
 
-		#fix for timezones, thanks to Slash
-		cat /etc/rc.conf | grep ^TIMEZONE | cut -d"\"" -f 2 > timezone || return 1
-			
 		make || return 1
 	popd || return 1
+}
+
+package() {
 
 	#language
 	install -d ${pkgdir}/opt/boxee/language || return 1
@@ -243,6 +267,13 @@ EOF
         done || return 1
 	popd || return 1
 
+	#remove unnecessary libs
+	if [ $(uname -m) = "x86_64" ]; then
+		rm -rf ${pkgdir}/opt/boxee/system/players/flashplayer/*486*
+	else
+		rm -rf ${pkgdir}/opt/boxee/system/players/flashplayer/*x86_64*
+	fi
+
 	#screensavers
 	install -d ${pkgdir}/opt/boxee/screensavers || return 1
 	install -D ${_src}/screensavers/*.xbs ${pkgdir}/opt/boxee/screensavers/ || return 1
@@ -267,26 +298,8 @@ EOF
 	
 	#freedesktop
 	install -d ${pkgdir}/usr/share/applications || return 1
-	install -D ${srcdir}/boxee.desktop ${pkgdir}/usr/share/applications/ || return 1
+	install -D -m644 ${srcdir}/boxee.desktop ${pkgdir}/usr/share/applications/ || return 1
 	install -d ${pkgdir}/usr/share/pixmaps || return 1
 	install -D ${_src}/media/icon.png ${pkgdir}/usr/share/pixmaps/boxee.png || return 1
 
-	#some symlinks found thanks to the impressive debugging skills of anish, and a few others from me that will allow bxflplayer-linux to run finally!
-	install -d ${pkgdir}/usr/lib || return 1
-	ln -s /usr/lib/libsmime3.so ${pkgdir}/usr/lib/libsmime3.so.1d || return 1
-	ln -s /usr/lib/libssl3.so ${pkgdir}/usr/lib/libssl3.so.1d || return 1
-	ln -s /usr/lib/libnss3.so ${pkgdir}/usr/lib/libnss3.so.1d || return 1
-	ln -s /usr/lib/libnssutil3.so ${pkgdir}/usr/lib/libnssutil3.so.1d || return 1
-	ln -s /usr/lib/libplds4.so ${pkgdir}/usr/lib/libplds4.so.0d || return 1
-	ln -s /usr/lib/libplc4.so ${pkgdir}/usr/lib/libplc4.so.0d || return 1
-	ln -s /usr/lib/libnspr4.so ${pkgdir}/usr/lib/libnspr4.so.0d || return 1
-	
-	#a symlink to solve the icon.png problem
-	pushd ${pkgdir}/opt/boxee/media/ || return 1
-		ln -s icon32x32-linux.png icon.png || return 1
-	popd || return 1
-
-	# boxee needs /etc/timezone, arch doesn't have it.
-	install -d ${pkgdir}/etc || return 1
-	install -D ${_src}/timezone ${pkgdir}/etc/ || return 1
 }
