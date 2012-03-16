@@ -24,31 +24,26 @@ url="http://www.boxee.tv/"
 install='boxee-source.install'
 source=(http://dl.boxee.tv/boxee-sources-$pkgver-$minorver.tar.xz
 	boxee.desktop
-	smbno.h
 	boxee64.patch
-	anish.patch
 	libpng.patch
-	ffmpeg64.patch
-	12563_fix.patch
 	libfix.patch
 	mysql_fix.patch
 	libjpeg_cflags.patch
 	fixtypediff.patch
 	libpng15.patch
 	ssaver_fix.patch
-	misc.patch
-md5sums=('36284eee3cb1db776b78e594865aa7b6'
+	misc.patch)
+md5sums=('51ff4c717ada75974e844e2c8a42f367'
          'dcad8a3955ea2742a6dccb23e6b665ef'
-         '3e53f9a60344dad366b230fb2ac876ec'
-         'b9ff2928d707321c96ef1ad792c14dda'
          '3241498186d95a5aafd4d2a6947c764f'
-         'a07e311b6da020f7e6847d249cf08b66'
-         'fbed461ece6620d2c31da1169d9744d3'
-         '4ad256054dbc6739fbe5591aac5777d7'
-         'de21425ae087313e2898aa5edaeda14b'
-         'cff658ec51e4fe7cfb94700ae689970f'
-         'da4c26bf1a0b3c55ed5b773d025d45fb'
-         'a28c4cf86d1eba78d7f66bdbc4dafcf0')
+         'fcbca3c8ffab5402fec84d6d05db5d3d'
+         '0f856a7e8b86aaa19599ecdc53098563'
+         'bb279a1ee89958d9c631bb6bc4099f08'
+         'acacd13c8169bfc5f3fa15807a5bf789'
+         '55a04bca0f3f6cabaae0b2786657994d'
+         '9cbbea104b3bfdf2d524cf4212f14006'
+         'df64ef665058141dcde9da921db74696'
+         '3df822bc532ccdc5b096604eb0836e37')
 
 _src=${srcdir}/boxee-sources-"$minorver"
 
