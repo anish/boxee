@@ -1,10 +1,20 @@
---- Makefile.in.orig	2010-11-11 11:50:05.000000000 -0800
-+++ Makefile.in	2010-11-11 11:50:23.000000000 -0800
-@@ -144,6 +144,7 @@
- LIBS += xbmc/lib/libmms/libmms-@ARCH@.a xbmc/lib/libmms/libintl-@ARCH@.a xbmc/lib/libmms/libglib-2.0-@ARCH@.a
- else 
- LIBS += xbmc/lib/libsmb/libsmbclient-@ARCH@.a
-+LIBS += -lmms
+--- Makefile.in.orig	2011-12-31 02:34:02.000000000 -0800
++++ Makefile.in	2011-12-31 02:34:40.000000000 -0800
+@@ -181,7 +181,7 @@
+ DISTCLEAN_FILES=config.h config.log config.status tools/Linux/xbmc.sh \
+         autom4te.cache config.h.in~
+ 
+-all : Makefile externals Boxee BoxeeHal RecoveryConsole BoxeeWrapper MemLeakDetector
++all : Makefile externals Boxee 
+ 
+ give_me_my_mouse_back: give_me_my_mouse_back.c
+ 	gcc -g -o give_me_my_mouse_back give_me_my_mouse_back.c -I/opt/local/include -lSDL
+@@ -202,6 +202,8 @@
+ LIBS += -lsmbclient
  endif
  
- .PHONY : dllloader exports visualizations screensavers eventclients papcodecs \
++LIBS += -lmms
++
+ ifeq ($(findstring i486-linux,$(ARCH)), i486-linux)
+ LIBS += xbmc/lib/libPython/Python/libpython2.4.a
+ endif
